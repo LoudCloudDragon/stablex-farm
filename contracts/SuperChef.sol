@@ -1,10 +1,9 @@
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import '@stablex/stablex-swap-lib/contracts/math/SafeMath.sol';
+import '@stablex/stablex-swap-lib/contracts/token/BEP20/IBEP20.sol';
+import '@stablex/stablex-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
+import '@stablex/pancake-swap-lib/contracts/access/Ownable.sol';
 import "./StaxToken.sol";
 
 
@@ -30,7 +29,7 @@ interface IMigratorChef {
 // Have fun reading it. Hopefully it's bug-free. God bless.
 contract SuperChef is Ownable {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeBEP20 for IBEP20;
 
     // Info of each user.
     struct UserInfo {
@@ -51,7 +50,7 @@ contract SuperChef is Ownable {
 
     // Info of each pool.
     struct PoolInfo {
-        IERC20 lpToken;           // Address of LP token contract.
+        IBEP20 lpToken;           // Address of LP token contract.
         uint256 allocPoint;       // How many allocation points assigned to this pool.
         uint256 lastRewardBlock;  // Last block number that STAXs distribution occurs.
         uint256 accStaxPerShare; // Accumulated STAXs per share, times 1e12. See below.
@@ -120,7 +119,7 @@ contract SuperChef is Ownable {
 
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
-    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate) public onlyOwner {
+    function add(uint256 _allocPoint, IBEP20 _lpToken, bool _withUpdate) public onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
