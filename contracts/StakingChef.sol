@@ -1,22 +1,23 @@
 pragma solidity 0.6.12;
-
 import '@stablex/stablex-swap-lib/contracts/math/SafeMath.sol';
 import '@stablex/stablex-swap-lib/contracts/token/BEP20/IBEP20.sol';
 import '@stablex/stablex-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
+import '@stablex/stablex-swap-lib/contracts/access/Ownable.sol';
+
 
 import './SuperChef.sol';
-import './StaxToken.sol';
+import './StakingToken.sol';
 
-contract StakingChef {
+contract StakingChef is Ownable {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
 
     uint256 public startBlock;
     uint256 public endBlock;
     uint256 public poolId;
-    IBEP20 public stakingToken;
+    StakingToken public stakingToken;
     SuperChef public chef;
-    StaxToken public stax;
+    IBEP20 public stax;
 
     uint256 public poolAmount;
     uint256 public totalReward;
@@ -30,7 +31,7 @@ contract StakingChef {
     constructor(
         SuperChef _chef,
         IBEP20 _stax,
-        IBEP20 _stakingToken,
+        StakingToken _stakingToken,
         uint256 _startBlock,
         uint256 _endBlock,
         uint256 _poolId
@@ -45,11 +46,15 @@ contract StakingChef {
 
     // View function to see pending Tokens on frontend.
     function pendingReward(address _user) external view returns (uint256) {
-        if(totalReward == 0) {
+        uint256 amount = poolsInfo[msg.sender];
+        if(totalReward == 0 && amount > 0) {
             uint256 pending = chef.pendingStax(poolId, address(this));
-            return poolsInfo[address(this)].div(poolAmount).mul(pending);
+            return pending.mul(amount).div(poolAmount);
         }
-        return poolsInfo[msg.sender].div(poolAmount).mul(totalReward);
+        if (amount > 0) {
+            return totalReward.mul(amount).div(poolAmount);
+        }
+        return 0;
     }
 
 
@@ -60,7 +65,7 @@ contract StakingChef {
         stakingToken.mint(address(this), _amount);
         chef.deposit(poolId, _amount);
         poolsInfo[msg.sender] = poolsInfo[msg.sender] + _amount;
-        poolsAmount = poolsAmount + _amount;
+        poolAmount = poolAmount + _amount;
         emit Deposit(msg.sender, _amount);
     }
 
@@ -74,13 +79,13 @@ contract StakingChef {
         uint256 reward = poolsInfo[msg.sender].div(poolAmount).mul(totalReward);
         stax.safeTransfer(address(msg.sender), reward.add(poolsInfo[msg.sender]));
         poolsInfo[msg.sender] = 0;
-        poolsAmount = poolsAmount - poolsInfo[msg.sender];
-        emit Withdraw(msg.sender, _amount);
+        poolAmount = poolAmount - poolsInfo[msg.sender];
+        emit Withdraw(msg.sender, reward);
     }
 
     // EMERGENCY ONLY.
-    function emergencyWithdraw(_amount) public onlyOwner {
-        stax.safeTransfer(address(msg.sender), _amount);
-        emit EmergencyWithdraw(msg.sender, _amount);
-    }
+    // function emergencyWithdraw(_amount) public onlyOwner {
+    //     stax.safeTransfer(address(msg.sender), _amount);
+    //     emit EmergencyWithdraw(msg.sender, _amount);
+    // }
 }
