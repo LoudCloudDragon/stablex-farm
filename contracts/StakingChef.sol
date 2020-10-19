@@ -1,9 +1,9 @@
 pragma solidity 0.6.12;
-import '@stablex/stablex-swap-lib/contracts/math/SafeMath.sol';
-import '@stablex/stablex-swap-lib/contracts/token/BEP20/IBEP20.sol';
-import '@stablex/stablex-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
-import '@stablex/stablex-swap-lib/contracts/access/Ownable.sol';
 
+import '@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol';
+import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
+import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
+import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
 
 import './SuperChef.sol';
 import './StakingToken.sol';
@@ -84,8 +84,8 @@ contract StakingChef is Ownable {
     }
 
     // EMERGENCY ONLY.
-    // function emergencyWithdraw(_amount) public onlyOwner {
-    //     stax.safeTransfer(address(msg.sender), _amount);
-    //     emit EmergencyWithdraw(msg.sender, _amount);
-    // }
+    function emergencyWithdraw(uint256 _amount) public onlyOwner {
+        stax.safeTransfer(address(msg.sender), _amount);
+        emit EmergencyWithdraw(msg.sender, _amount);
+    }
 }
