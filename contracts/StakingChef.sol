@@ -1,9 +1,9 @@
 pragma solidity 0.6.12;
 
-import '@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
-import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
+import '@stablex/stablex-swap-lib/contracts/math/SafeMath.sol';
+import '@stablex/stablex-swap-lib/contracts/token/BEP20/IBEP20.sol';
+import '@stablex/stablex-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
+import '@stablex/stablex-swap-lib/contracts/access/Ownable.sol';
 
 import './SuperChef.sol';
 
@@ -49,15 +49,19 @@ contract StakingChef is Ownable {
     // View function to see pending Tokens on frontend.
     function pendingReward(address _user) external view returns (uint256) {
         uint256 amount = poolsInfo[msg.sender];
-        if(block.number < startBlock) {
+        if (block.number < startBlock) {
             return 0;
+        }
+        if (block.number > endBlock && amount > 0 && totalReward == 0) {
+            uint256 pending = chef.pendingStax(poolId, address(this));
+            return pending.mul(amount).div(poolAmount);
+        }
+        if (block.number > endBlock && amount > 0 && totalReward > 0) {
+            return totalReward.mul(amount).div(poolAmount);
         }
         if (totalReward == 0 && amount > 0) {
             uint256 pending = chef.pendingStax(poolId, address(this));
             return pending.mul(amount).div(poolAmount);
-        }
-        if (totalReward != 0 && amount > 0) {
-            return totalReward.mul(amount).div(poolAmount);
         }
         return 0;
     }
@@ -67,12 +71,12 @@ contract StakingChef is Ownable {
     function deposit(uint256 _amount) public {
         require (block.number < startBlock, 'not deposit time');
         stax.safeTransferFrom(address(msg.sender), address(this), _amount);
+        if (poolsInfo[msg.sender] == 0) {
+            addressList.push(address(msg.sender));
+        }
         poolsInfo[msg.sender] = poolsInfo[msg.sender] + _amount;
         preRewardAllocation[msg.sender] = preRewardAllocation[msg.sender].add((startBlock.sub(block.number)).mul(_amount));
         poolAmount = poolAmount + _amount;
-        if (poolsInfo[msg.sender] == 0) {
-            addressList.push(msg.sender);
-        }
         chef.deposit(poolId, 0);
         emit Deposit(msg.sender, _amount);
     }
@@ -81,11 +85,12 @@ contract StakingChef is Ownable {
     function withdraw() public {
         require (block.number > endBlock, 'not withdraw time');
         if (totalReward == 0) {
+            totalReward = chef.pendingStax(poolId, address(this)) - poolAmount;
             chef.deposit(poolId, 0);
         }
-        totalReward = stax.balanceOf(address(this)) - poolAmount;
-        uint256 reward = poolsInfo[msg.sender].div(poolAmount).mul(totalReward);
+        uint256 reward = poolsInfo[msg.sender].mul(totalReward).div(poolAmount);
         stax.safeTransfer(address(msg.sender), reward.add(poolsInfo[msg.sender]));
+        totalReward = totalReward - reward;
         poolAmount = poolAmount - poolsInfo[msg.sender];
         poolsInfo[msg.sender] = 0;
         emit Withdraw(msg.sender, reward);
@@ -105,4 +110,5 @@ contract StakingChef is Ownable {
     function harvestFromChef() public onlyOwner {
         chef.deposit(poolId, 0);
     }
+
 }
