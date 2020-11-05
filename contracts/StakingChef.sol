@@ -8,15 +8,15 @@ import './SuperChef.sol';
 
 contract StakingChef is Ownable {
     using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+    using SafeBEP20 for IBEP20;
 
     uint256 public startBlock;
     uint256 public endBlock;
     uint256 public poolId;
 
     SuperChef public chef;
-    IERC20 public stax;
-    IERC20 public stakingToken;
+    IBEP20 public stax;
+    IBEP20 public stakingToken;
 
     uint256 public poolAmount;
     uint256 public totalReward;
@@ -31,8 +31,8 @@ contract StakingChef is Ownable {
 
     constructor(
         SuperChef _chef,
-        IERC20 _stax,
-        IERC20 _stakingToken,
+        IBEP20 _stax,
+        IBEP20 _stakingToken,
         uint256 _startBlock,
         uint256 _endBlock,
         uint256 _poolId
@@ -84,13 +84,13 @@ contract StakingChef is Ownable {
     function withdraw() public {
         require (block.number > endBlock, 'not withdraw time');
         if (totalReward == 0) {
-            totalReward = chef.pendingStax(poolId, address(this)) - poolAmount;
+            totalReward = chef.pendingStax(poolId, address(this));
             chef.deposit(poolId, 0);
         }
         uint256 reward = poolsInfo[msg.sender].mul(totalReward).div(poolAmount);
         stax.safeTransfer(address(msg.sender), reward.add(poolsInfo[msg.sender]));
-        totalReward = totalReward - reward;
-        poolAmount = poolAmount - poolsInfo[msg.sender];
+        totalReward = totalReward.sub(reward);
+        poolAmount = poolAmount.sub(poolsInfo[msg.sender]);
         poolsInfo[msg.sender] = 0;
         emit Withdraw(msg.sender, reward);
     }
@@ -109,5 +109,3 @@ contract StakingChef is Ownable {
     function harvestFromChef() public onlyOwner {
         chef.deposit(poolId, 0);
     }
-
-}
