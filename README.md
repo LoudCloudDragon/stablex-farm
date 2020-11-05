@@ -1,1 +1,7 @@
-# stablex-farm contracts
+# stablex-farm contract
+
+### yarn install
+
+### yarn compile
+
+### yarn migrate
