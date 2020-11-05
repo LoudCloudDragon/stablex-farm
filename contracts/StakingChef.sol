@@ -1,23 +1,22 @@
 pragma solidity 0.6.12;
 
-import '@stablex/stablex-swap-lib/contracts/math/SafeMath.sol';
-import '@stablex/stablex-swap-lib/contracts/token/BEP20/IBEP20.sol';
-import '@stablex/stablex-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
-import '@stablex/stablex-swap-lib/contracts/access/Ownable.sol';
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import './SuperChef.sol';
 
 contract StakingChef is Ownable {
     using SafeMath for uint256;
-    using SafeBEP20 for IBEP20;
+    using SafeERC20 for IERC20;
 
     uint256 public startBlock;
     uint256 public endBlock;
     uint256 public poolId;
 
     SuperChef public chef;
-    IBEP20 public stax;
-    IBEP20 public stakingToken;
+    IERC20 public stax;
+    IERC20 public stakingToken;
 
     uint256 public poolAmount;
     uint256 public totalReward;
@@ -32,8 +31,8 @@ contract StakingChef is Ownable {
 
     constructor(
         SuperChef _chef,
-        IBEP20 _stax,
-        IBEP20 _stakingToken,
+        IERC20 _stax,
+        IERC20 _stakingToken,
         uint256 _startBlock,
         uint256 _endBlock,
         uint256 _poolId
